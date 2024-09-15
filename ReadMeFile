@@ -1,0 +1,55 @@
+# File Upload and Compression with Cloudinary
+
+This project demonstrates a Node.js application using Express, Multer, and Cloudinary to handle file uploads and compression. The application allows users to upload images, videos, and documents, compresses them according to their type, and uploads them to Cloudinary for storage and further processing.
+
+## Features
+
+- *File Upload:* Utilizes Multer to handle file uploads.
+- *Cloudinary Integration:* Compresses and uploads files to Cloudinary.
+- *Transformation Options:* Applies different transformations based on file type (image, video, document).
+- *File Compression Metrics:* Provides detailed information on file sizes and compression efficiency.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- *Node.js*: [Download and install Node.js](https://nodejs.org/).
+- *Cloudinary Account*: [Sign up for Cloudinary](https://cloudinary.com/) to get your Cloudinary credentials.
+
+## Installation
+
+### 1. Clone the Repository
+
+Clone this repository to your local machine:
+
+```bash
+git clone https://github.com/yourusername/fortge-codr.git
+cd fortge-codr
+npm install
+CLOUD_NAME=your_cloud_name
+API_KEY=your_api_key
+API_SECRET=your_api_secret
+npm start
+[
+  {
+    "originalFileSize": "1.23",
+    "compressedFileSize": "0.98",
+    "compressionPercentage": "20.28",
+    "downloadUrl": "https://res.cloudinary.com/your_cloud_name/video/upload/v1612871234/example_video.mp4"
+  }
+]
+{
+  "error": "File compression failed",
+  "details": "Detailed error message"
+}
+Summary:
+
+Overview: Provides a clear description of what the project does.
+Features: Lists the main functionalities.
+Prerequisites: Details the required software and services.
+Installation: Guides users through setting up the project.
+Usage: Explains how to use the application and its API.
+Code Explanation: Breaks down the core components of the code.
+Contributing: Encourages community involvement and provides contribution guidelines.
+License and Contact: Includes legal and contact information.
+Acknowledgments: Credits relevant tools and libraries.
