@@ -134,44 +134,99 @@
     </div>
 
     <script>
+        const CLOUD_NAME = 'ddy0ut9pz';
+        const UPLOAD_PRESET = 'ml_default';
+
+        const getUploadConfig = (fileType) => {
+            if (fileType === 'video') {
+                return {
+                    resourceType: 'video',
+                    eager: 'q_auto:eco,f_auto'
+                };
+            }
+
+            if (fileType === 'image') {
+                return {
+                    resourceType: 'image',
+                    eager: 'c_scale,w_800,q_auto:eco,f_auto'
+                };
+            }
+
+            return {
+                resourceType: 'raw',
+                eager: null
+            };
+        };
+
         document.getElementById('uploadForm').addEventListener('submit', async function(event) {
-            event.preventDefault(); // Prevent the default form submission
-           
-        // Send a request to the server to download the compressed file
-            const formData = new FormData();
+            event.preventDefault();
+
             const fileInput = document.getElementById('fileInput');
             const fileType = document.getElementById('fileType').value;
             const uploadButton = document.querySelector('button[type="submit"]');
-            
+            const loadingSpinner = document.querySelector('.loading');
 
-            for (let i = 0; i < fileInput.files.length; i++) {
-                formData.append('file', fileInput.files[i]);
+            if (!UPLOAD_PRESET || !CLOUD_NAME) {
+                document.getElementById('result').innerHTML = '<p>Error: Missing Cloudinary client configuration.</p>';
+                return;
             }
-            formData.append('fileType', fileType);
 
-          
+            uploadButton.disabled = true;
+            loadingSpinner.style.display = 'inline-block';
 
             try {
-                console.log('Uploading files...');
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                const { resourceType, eager } = getUploadConfig(fileType);
+                const results = [];
 
-                if (!response.ok) {
-                    throw new Error('File upload failed');
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    const file = fileInput.files[i];
+                    const formData = new FormData();
+
+                    formData.append('file', file);
+                    formData.append('upload_preset', UPLOAD_PRESET);
+
+                    if (eager) {
+                        formData.append('eager', eager);
+                    }
+
+                    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error && result.error.message ? result.error.message : 'File upload failed');
+                    }
+
+                    const originalBytes = file.size;
+                    const originalFileSize = (originalBytes / (1024 * 1024)).toFixed(2);
+                    const eagerResult = Array.isArray(result.eager) && result.eager.length > 0 ? result.eager[0] : null;
+                    const compressedBytes = eagerResult && eagerResult.bytes ? eagerResult.bytes : result.bytes;
+                    const compressedFileSize = (compressedBytes / (1024 * 1024)).toFixed(2);
+                    const compressionPercentage = originalBytes > 0
+                        ? (((originalBytes - compressedBytes) / originalBytes) * 100).toFixed(2)
+                        : '0.00';
+
+                    results.push({
+                        originalFileSize,
+                        compressedFileSize,
+                        compressionPercentage,
+                        downloadUrl: eagerResult && eagerResult.secure_url ? eagerResult.secure_url : result.secure_url
+                    });
                 }
 
-                const result = await response.json();
-                console.log('Upload successful:', result);
-                // Redirect to the new page with the result data
-                const params = new URLSearchParams(result[0]).toString();
+                const params = new URLSearchParams(results[0]).toString();
                 window.location.href = `/result.html?${params}`;
             } catch (error) {
                 console.error('Error during file upload:', error);
                 document.getElementById('result').innerHTML = `<p>Error: ${error.message}</p>`;
-            } 
-            
+            } finally {
+                uploadButton.disabled = false;
+                loadingSpinner.style.display = 'none';
+            }
         });
     </script>
 </body>

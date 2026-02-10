@@ -1,11 +1,13 @@
 const cloudinary = require('cloudinary').v2;
 const path = require('path');
 
+require('dotenv').config();
+
 // Cloudinary configuration  
 cloudinary.config({  
-    cloud_name: 'ddy0ut9pz', // Replace with your Cloudinary name  
-    api_key: '513147674718252',        // Replace with your Cloudinary API key  
-    api_secret: 'qTFrINkbHAaOj8uOQvRUjcBmGhQ'   // Replace with your Cloudinary API secret  
+    cloud_name: process.env.CLOUD_NAME, 
+    api_key: process.env.API_KEY, 
+    api_secret: process.env.API_SECRET 
 });  
 
 // Path to the file you want to upload

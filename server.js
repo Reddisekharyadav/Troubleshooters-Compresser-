@@ -3,16 +3,25 @@ const multer = require('multer');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const os = require('os');
+
+require('dotenv').config();
 
 // Cloudinary configuration  
 cloudinary.config({  
-    cloud_name: 'ddy0ut9pz', // Replace with your Cloudinary name  
-    api_key: '513147674718252',        // Replace with your Cloudinary API key  
-    api_secret: 'qTFrINkbHAaOj8uOQvRUjcBmGhQ'   // Replace with your Cloudinary API secret  
+    cloud_name: process.env.CLOUD_NAME, 
+    api_key: process.env.API_KEY, 
+    api_secret: process.env.API_SECRET 
 }); 
 
+const hasCloudinaryConfig = () => {
+    return Boolean(process.env.CLOUD_NAME && process.env.API_KEY && process.env.API_SECRET);
+};
+
 const app = express();
-const upload = multer({ dest: 'uploads/' }); // Temporary upload directory
+const uploadDir = path.join(os.tmpdir(), 'uploads');
+fs.mkdirSync(uploadDir, { recursive: true });
+const upload = multer({ dest: uploadDir }); // Temporary upload directory
 
 const uploadToCloudinary = (filePath, options) => {
     return new Promise((resolve, reject) => {
@@ -38,9 +47,23 @@ app.get('/', (req, res) => {
 
 app.post('/upload', upload.array('file'), async (req, res) => {
     try {
+        if (!hasCloudinaryConfig()) {
+            return res.status(500).json({
+                error: 'Missing Cloudinary configuration',
+                details: 'Set CLOUD_NAME, API_KEY, and API_SECRET in the environment.'
+            });
+        }
+
         const fileType = req.body.fileType;
         const files = req.files;
         let compressedFiles = [];
+
+        if (!files || files.length === 0) {
+            return res.status(400).json({
+                error: 'No files received',
+                details: 'Upload at least one file.'
+            });
+        }
 
         for (const file of files) {
             const filePath = file.path;
@@ -95,7 +118,11 @@ app.post('/upload', upload.array('file'), async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000; // Change the port number here
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000; // Change the port number here
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
+
+module.exports = app;
