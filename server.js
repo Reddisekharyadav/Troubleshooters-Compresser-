@@ -7,21 +7,25 @@ const os = require('os');
 
 require('dotenv').config();
 
+const cleanEnv = (value) => {
+    return (value || '').trim().replace(/^['"]|['"]$/g, '');
+};
+
 // Cloudinary configuration  
 cloudinary.config({  
-    cloud_name: process.env.CLOUD_NAME, 
-    api_key: process.env.API_KEY, 
-    api_secret: process.env.API_SECRET 
+    cloud_name: cleanEnv(process.env.CLOUD_NAME), 
+    api_key: cleanEnv(process.env.API_KEY), 
+    api_secret: cleanEnv(process.env.API_SECRET) 
 }); 
 
 const hasCloudinaryConfig = () => {
-    return Boolean(process.env.CLOUD_NAME && process.env.API_KEY && process.env.API_SECRET);
+    return Boolean(cleanEnv(process.env.CLOUD_NAME) && cleanEnv(process.env.API_KEY) && cleanEnv(process.env.API_SECRET));
 };
 
 const getPublicConfig = () => {
     return {
-        cloudName: process.env.CLOUD_NAME || '',
-        uploadPreset: process.env.UPLOAD_PRESET || ''
+        cloudName: cleanEnv(process.env.CLOUD_NAME),
+        uploadPreset: cleanEnv(process.env.UPLOAD_PRESET)
     };
 };
 
