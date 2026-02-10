@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trobuleshooters Compresser</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -128,14 +129,14 @@
                 <label for="files">Select Files:</label>
                 <input type="file" name="file" id="fileInput" multiple required title="Select files to upload">
             </div>
-            <button id="downloadButton">Download Compressed File <span class="loading" style="display: none;"></span></button>
+            <button id="downloadButton" type="submit">Download Compressed File <span class="loading" style="display: none;"></span></button>
         </form>
         <div id="result"></div>
     </div>
 
     <script>
-        const CLOUD_NAME = 'ddy0ut9pz';
-        const UPLOAD_PRESET = 'ml_default';
+        let cloudName = '';
+        let uploadPreset = '';
 
         const getUploadConfig = (fileType) => {
             if (fileType === 'video') {
@@ -158,16 +159,36 @@
             };
         };
 
+        const loadClientConfig = async () => {
+            if (cloudName && uploadPreset) {
+                return { cloudName, uploadPreset };
+            }
+
+            const response = await fetch('/config');
+            if (!response.ok) {
+                throw new Error('Unable to load upload configuration.');
+            }
+
+            const config = await response.json();
+            cloudName = config.cloudName || '';
+            uploadPreset = config.uploadPreset || '';
+
+            if (!cloudName || !uploadPreset) {
+                throw new Error('Missing upload configuration. Set CLOUD_NAME and UPLOAD_PRESET in the environment.');
+            }
+
+            return { cloudName, uploadPreset };
+        };
+
         document.getElementById('uploadForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
             const fileInput = document.getElementById('fileInput');
             const fileType = document.getElementById('fileType').value;
-            const uploadButton = document.querySelector('button[type="submit"]');
+            const uploadButton = document.getElementById('downloadButton');
             const loadingSpinner = document.querySelector('.loading');
 
-            if (!UPLOAD_PRESET || !CLOUD_NAME) {
-                document.getElementById('result').innerHTML = '<p>Error: Missing Cloudinary client configuration.</p>';
+            if (!uploadButton || !loadingSpinner) {
                 return;
             }
 
@@ -175,6 +196,7 @@
             loadingSpinner.style.display = 'inline-block';
 
             try {
+                const { cloudName, uploadPreset } = await loadClientConfig();
                 const { resourceType, eager } = getUploadConfig(fileType);
                 const results = [];
 
@@ -183,13 +205,13 @@
                     const formData = new FormData();
 
                     formData.append('file', file);
-                    formData.append('upload_preset', UPLOAD_PRESET);
+                    formData.append('upload_preset', uploadPreset);
 
                     if (eager) {
                         formData.append('eager', eager);
                     }
 
-                    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+                    const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         body: formData

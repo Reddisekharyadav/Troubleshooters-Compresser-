@@ -18,6 +18,13 @@ const hasCloudinaryConfig = () => {
     return Boolean(process.env.CLOUD_NAME && process.env.API_KEY && process.env.API_SECRET);
 };
 
+const getPublicConfig = () => {
+    return {
+        cloudName: process.env.CLOUD_NAME || '',
+        uploadPreset: process.env.UPLOAD_PRESET || ''
+    };
+};
+
 const app = express();
 const uploadDir = path.join(os.tmpdir(), 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
@@ -39,6 +46,10 @@ const uploadToCloudinary = (filePath, options) => {
 
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/config', (req, res) => {
+    res.json(getPublicConfig());
+});
 
 // Serve the HTML file for the root URL
 app.get('/', (req, res) => {
