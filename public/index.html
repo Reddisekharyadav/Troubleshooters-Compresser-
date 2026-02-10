@@ -135,51 +135,6 @@
     </div>
 
     <script>
-        let cloudName = '';
-        let uploadPreset = '';
-
-        const getUploadConfig = (fileType) => {
-            if (fileType === 'video') {
-                return {
-                    resourceType: 'video',
-                    eager: 'q_auto:eco,f_auto'
-                };
-            }
-
-            if (fileType === 'image') {
-                return {
-                    resourceType: 'image',
-                    eager: 'c_scale,w_800,q_auto:eco,f_auto'
-                };
-            }
-
-            return {
-                resourceType: 'raw',
-                eager: null
-            };
-        };
-
-        const loadClientConfig = async () => {
-            if (cloudName && uploadPreset) {
-                return { cloudName, uploadPreset };
-            }
-
-            const response = await fetch('/config');
-            if (!response.ok) {
-                throw new Error('Unable to load upload configuration.');
-            }
-
-            const config = await response.json();
-            cloudName = config.cloudName || '';
-            uploadPreset = config.uploadPreset || '';
-
-            if (!cloudName || !uploadPreset) {
-                throw new Error('Missing upload configuration. Set CLOUD_NAME and UPLOAD_PRESET in the environment.');
-            }
-
-            return { cloudName, uploadPreset };
-        };
-
         document.getElementById('uploadForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
@@ -196,51 +151,27 @@
             loadingSpinner.style.display = 'inline-block';
 
             try {
-                const { cloudName, uploadPreset } = await loadClientConfig();
-                const { resourceType, eager } = getUploadConfig(fileType);
-                const results = [];
+                const formData = new FormData();
 
                 for (let i = 0; i < fileInput.files.length; i++) {
-                    const file = fileInput.files[i];
-                    const formData = new FormData();
-
-                    formData.append('file', file);
-                    formData.append('upload_preset', uploadPreset);
-
-                    if (eager) {
-                        formData.append('eager', eager);
-                    }
-
-                    const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const result = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(result.error && result.error.message ? result.error.message : 'File upload failed');
-                    }
-
-                    const originalBytes = file.size;
-                    const originalFileSize = (originalBytes / (1024 * 1024)).toFixed(2);
-                    const eagerResult = Array.isArray(result.eager) && result.eager.length > 0 ? result.eager[0] : null;
-                    const compressedBytes = eagerResult && eagerResult.bytes ? eagerResult.bytes : result.bytes;
-                    const compressedFileSize = (compressedBytes / (1024 * 1024)).toFixed(2);
-                    const compressionPercentage = originalBytes > 0
-                        ? (((originalBytes - compressedBytes) / originalBytes) * 100).toFixed(2)
-                        : '0.00';
-
-                    results.push({
-                        originalFileSize,
-                        compressedFileSize,
-                        compressionPercentage,
-                        downloadUrl: eagerResult && eagerResult.secure_url ? eagerResult.secure_url : result.secure_url
-                    });
+                    formData.append('file', fileInput.files[i]);
                 }
 
-                const params = new URLSearchParams(results[0]).toString();
+                formData.append('fileType', fileType);
+
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json().catch(() => ({}));
+                    const message = errorBody.details || errorBody.error || 'File upload failed';
+                    throw new Error(message);
+                }
+
+                const result = await response.json();
+                const params = new URLSearchParams(result[0]).toString();
                 window.location.href = `/result.html?${params}`;
             } catch (error) {
                 console.error('Error during file upload:', error);
