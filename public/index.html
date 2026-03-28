@@ -521,11 +521,7 @@
                 return 'backend';
             }
 
-            if (isVercelHost()) {
-                return 'cloudinary-direct';
-            }
-
-            return 'backend';
+            return 'cloudinary-direct';
         };
 
         const getCloudinaryPublicConfig = async () => {
@@ -691,6 +687,7 @@
             event.preventDefault();
 
             const fileType = document.getElementById('fileType').value;
+            const uploadMode = getUploadMode();
             const uploadButton = document.getElementById('downloadButton');
             const loadingSpinner = document.querySelector('.loading');
             const resultNode = document.getElementById('result');
@@ -704,10 +701,12 @@
                 return;
             }
 
-            const deploymentSizeError = getDeploymentSizeError();
-            if (deploymentSizeError) {
-                resultNode.textContent = deploymentSizeError;
-                return;
+            if (uploadMode === 'backend') {
+                const deploymentSizeError = getDeploymentSizeError();
+                if (deploymentSizeError) {
+                    resultNode.textContent = deploymentSizeError;
+                    return;
+                }
             }
 
             uploadButton.disabled = true;
@@ -715,7 +714,6 @@
             resultNode.textContent = '';
 
             try {
-                const uploadMode = getUploadMode();
                 const files = Array.from(fileInput.files || []);
                 const result = uploadMode === 'cloudinary-direct'
                     ? await uploadFilesViaCloudinaryDirect(files, fileType)
