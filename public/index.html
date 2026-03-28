@@ -506,6 +506,173 @@
             return errorBody.details || errorBody.error || 'File upload failed';
         };
 
+        const isVercelHost = () => {
+            const host = globalThis.location.hostname || '';
+            return host.endsWith('.vercel.app');
+        };
+
+        const isLocalHost = () => {
+            const host = globalThis.location.hostname || '';
+            return host === 'localhost' || host === '127.0.0.1';
+        };
+
+        const getUploadMode = () => {
+            if (isLocalHost()) {
+                return 'backend';
+            }
+
+            if (isVercelHost()) {
+                return 'cloudinary-direct';
+            }
+
+            return 'backend';
+        };
+
+        const getCloudinaryPublicConfig = async () => {
+            const response = await fetch('/config', { method: 'GET' });
+            if (!response.ok) {
+                throw new Error('Unable to load cloud config. Ensure CLOUD_NAME and UPLOAD_PRESET are set in Vercel environment variables.');
+            }
+
+            const config = await response.json();
+            const cloudName = typeof config.cloudName === 'string' ? config.cloudName.trim() : '';
+            const uploadPreset = typeof config.uploadPreset === 'string' ? config.uploadPreset.trim() : '';
+
+            if (!cloudName || !uploadPreset) {
+                throw new Error('Missing Cloudinary public config. Set CLOUD_NAME and UPLOAD_PRESET in Vercel project environment variables and redeploy.');
+            }
+
+            return { cloudName, uploadPreset };
+        };
+
+        const buildCloudinaryDeliveryUrl = (secureUrl, mode, resourceType) => {
+            if (typeof secureUrl !== 'string' || !secureUrl.includes('/upload/')) {
+                return secureUrl;
+            }
+
+            let transformations = '';
+            if (resourceType === 'image' || resourceType === 'video') {
+                transformations = mode === 'download' ? 'fl_attachment,f_auto,q_auto' : 'f_auto,q_auto';
+            } else {
+                transformations = mode === 'download' ? 'fl_attachment' : '';
+            }
+
+            if (!transformations) {
+                return secureUrl;
+            }
+
+            return secureUrl.replace('/upload/', `/upload/${transformations}/`);
+        };
+
+        const getRemoteFileSize = async (url) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    return null;
+                }
+                const blob = await response.blob();
+                return Number(blob.size || 0);
+            } catch {
+                return null;
+            }
+        };
+
+        const uploadFilesViaCloudinaryDirect = async (files, fileType) => {
+            const { cloudName, uploadPreset } = await getCloudinaryPublicConfig();
+            const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
+            const results = [];
+
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', uploadPreset);
+
+                const uploadResponse = await fetch(uploadUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const uploadJson = await uploadResponse.json().catch(() => ({}));
+                if (!uploadResponse.ok) {
+                    const message = uploadJson.error && uploadJson.error.message ? uploadJson.error.message : 'Cloudinary direct upload failed';
+                    throw new Error(message);
+                }
+
+                const resourceType = typeof uploadJson.resource_type === 'string' ? uploadJson.resource_type : fileType;
+                const previewUrl = buildCloudinaryDeliveryUrl(uploadJson.secure_url, 'preview', resourceType);
+                const downloadUrl = buildCloudinaryDeliveryUrl(uploadJson.secure_url, 'download', resourceType);
+
+                const originalFileSize = Number(file.size || 0);
+                let compressedFileSize = Number(uploadJson.bytes || 0);
+                const optimizedSize = await getRemoteFileSize(previewUrl);
+                if (typeof optimizedSize === 'number' && optimizedSize > 0) {
+                    compressedFileSize = optimizedSize;
+                }
+
+                const compressionPercentage = originalFileSize > 0
+                    ? ((originalFileSize - compressedFileSize) / originalFileSize) * 100
+                    : 0;
+
+                results.push({
+                    fileName: file.name,
+                    originalFileSize: (originalFileSize / (1024 * 1024)).toFixed(2),
+                    compressedFileSize: (compressedFileSize / (1024 * 1024)).toFixed(2),
+                    compressionPercentage: compressionPercentage.toFixed(2),
+                    previewUrl,
+                    downloadUrl
+                });
+            }
+
+            return results;
+        };
+
+        const uploadFilesViaBackend = async (fileType) => {
+            const buildFormData = () => {
+                const formData = new FormData();
+                for (const file of fileInput.files) {
+                    formData.append('file', file);
+                }
+                formData.append('fileType', fileType);
+                return formData;
+            };
+
+            const endpoints = globalThis.location.protocol === 'http:' || globalThis.location.protocol === 'https:'
+                ? ['/upload', 'http://localhost:3000/upload', 'http://127.0.0.1:3000/upload']
+                : ['http://localhost:3000/upload', 'http://127.0.0.1:3000/upload'];
+
+            let response;
+            let lastNetworkError;
+
+            for (const endpoint of endpoints) {
+                try {
+                    response = await fetch(endpoint, {
+                        method: 'POST',
+                        body: buildFormData()
+                    });
+                    break;
+                } catch (networkError) {
+                    lastNetworkError = networkError;
+                }
+            }
+
+            if (!response) {
+                const networkMessage = lastNetworkError instanceof Error ? lastNetworkError.message : 'Unable to connect to upload service.';
+                throw new Error(`Cannot connect to backend upload service. Start the server with "npm start" and open http://localhost:3000. (${networkMessage})`);
+            }
+
+            if (!response.ok) {
+                const message = await getUploadFailureMessage(response);
+                throw new Error(message);
+            }
+
+            const result = await response.json();
+            if (!Array.isArray(result) || result.length === 0) {
+                throw new Error('Upload completed but no result was returned.');
+            }
+
+            return result;
+        };
+
         const updateAcceptedFileTypes = () => {
             const selectedType = fileTypeSelect.value;
             if (selectedType === 'image') {
@@ -548,49 +715,11 @@
             resultNode.textContent = '';
 
             try {
-                const buildFormData = () => {
-                    const formData = new FormData();
-                    for (const file of fileInput.files) {
-                        formData.append('file', file);
-                    }
-                    formData.append('fileType', fileType);
-                    return formData;
-                };
-
-                const endpoints = globalThis.location.protocol === 'http:' || globalThis.location.protocol === 'https:'
-                    ? ['/upload', 'http://localhost:3000/upload', 'http://127.0.0.1:3000/upload']
-                    : ['http://localhost:3000/upload', 'http://127.0.0.1:3000/upload'];
-
-                let response;
-                let lastNetworkError;
-
-                for (const endpoint of endpoints) {
-                    try {
-                        response = await fetch(endpoint, {
-                            method: 'POST',
-                            body: buildFormData()
-                        });
-                        break;
-                    } catch (networkError) {
-                        lastNetworkError = networkError;
-                    }
-                }
-
-                if (!response) {
-                    const networkMessage = lastNetworkError instanceof Error ? lastNetworkError.message : 'Unable to connect to upload service.';
-                    throw new Error(`Cannot connect to backend upload service. Start the server with "npm start" and open http://localhost:3000. (${networkMessage})`);
-                }
-
-                if (!response.ok) {
-                    const message = await getUploadFailureMessage(response);
-                    throw new Error(message);
-                }
-
-                const result = await response.json();
-
-                if (!Array.isArray(result) || result.length === 0) {
-                    throw new Error('Upload completed but no result was returned.');
-                }
+                const uploadMode = getUploadMode();
+                const files = Array.from(fileInput.files || []);
+                const result = uploadMode === 'cloudinary-direct'
+                    ? await uploadFilesViaCloudinaryDirect(files, fileType)
+                    : await uploadFilesViaBackend(fileType);
 
                 sessionStorage.setItem('compressionResults', JSON.stringify(result));
                 globalThis.location.href = '/result.html';
