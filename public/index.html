@@ -469,6 +469,42 @@
 
         const fileTypeSelect = document.getElementById('fileType');
         const fileInput = document.getElementById('fileInput');
+        const DEPLOYMENT_TOTAL_UPLOAD_LIMIT_BYTES = Math.floor(3.8 * 1024 * 1024);
+
+        const isLikelyVercelDeployment = () => {
+            const host = globalThis.location.hostname || '';
+            return host.endsWith('.vercel.app') || host.includes('vercel');
+        };
+
+        const getTotalSelectedSize = () => {
+            let total = 0;
+            for (const file of fileInput.files) {
+                total += Number(file.size || 0);
+            }
+            return total;
+        };
+
+        const getDeploymentSizeError = () => {
+            if (!isLikelyVercelDeployment()) {
+                return '';
+            }
+
+            const totalSelectedSize = getTotalSelectedSize();
+            if (totalSelectedSize > DEPLOYMENT_TOTAL_UPLOAD_LIMIT_BYTES) {
+                return 'This deployment has an upload body limit. Please upload smaller files (about 3.8 MB total) or move backend to Render/Railway for larger uploads.';
+            }
+
+            return '';
+        };
+
+        const getUploadFailureMessage = async (response) => {
+            if (response.status === 413) {
+                return 'Upload too large for this deployment (HTTP 413). On Vercel serverless, request body size is limited. Use smaller files or deploy backend on Render/Railway for larger uploads.';
+            }
+
+            const errorBody = await response.json().catch(() => ({}));
+            return errorBody.details || errorBody.error || 'File upload failed';
+        };
 
         const updateAcceptedFileTypes = () => {
             const selectedType = fileTypeSelect.value;
@@ -498,6 +534,12 @@
 
             if (!fileInput.files || fileInput.files.length === 0) {
                 resultNode.textContent = 'Please choose at least one file.';
+                return;
+            }
+
+            const deploymentSizeError = getDeploymentSizeError();
+            if (deploymentSizeError) {
+                resultNode.textContent = deploymentSizeError;
                 return;
             }
 
@@ -540,8 +582,7 @@
                 }
 
                 if (!response.ok) {
-                    const errorBody = await response.json().catch(() => ({}));
-                    const message = errorBody.details || errorBody.error || 'File upload failed';
+                    const message = await getUploadFailureMessage(response);
                     throw new Error(message);
                 }
 
