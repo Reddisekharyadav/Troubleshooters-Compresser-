@@ -3,166 +3,541 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trobuleshooters Compresser</title>
+    <title>Troubleshooters Compressor</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: url('download.jpeg') no-repeat center center fixed;
-            background-size: cover;
-            margin: 0;
-            padding: 0;
+        :root {
+            --bg-main: #0b1220;
+            --bg-card: rgba(8, 16, 32, 0.72);
+            --line: rgba(130, 180, 255, 0.24);
+            --text-main: #ebf1ff;
+            --text-dim: #9cb2d9;
+            --accent: #5be7c4;
+            --accent-2: #56a3ff;
+            --danger: #ff8a8a;
         }
-        .background-blur {
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: radial-gradient(circle at 15% 20%, #162748 0%, #0b1220 55%, #05070d 100%);
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        #bgCanvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: inherit;
-            filter: blur(2px);
-            z-index: -1;
+            z-index: 0;
         }
-        .container {
+
+        .page-wrap {
             position: relative;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.95); /* Increased opacity */
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+            width: min(980px, 92vw);
+            margin: 28px auto;
         }
+
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
+            gap: 16px;
+            padding: 14px 18px;
+            background: rgba(8, 16, 32, 0.72);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+            animation: fadeInDown 700ms ease;
         }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
         .navbar img {
             height: 40px;
         }
+
         .navbar .profile {
             display: flex;
             align-items: center;
+            gap: 10px;
         }
+
         .navbar .profile img {
-            height: 40px;
+            height: 36px;
+            width: 36px;
             border-radius: 50%;
-            margin-left: 10px;
+            border: 2px solid var(--line);
         }
+
+        .ghost-btn {
+            border: 1px solid var(--line);
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 999px;
+            padding: 8px 14px;
+            font: inherit;
+        }
+
+        .hero {
+            margin-top: 28px;
+            animation: fadeInUp 850ms ease;
+        }
+
+        .kicker {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            color: var(--text-dim);
+            font-size: 12px;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .title {
+            margin: 14px 0 6px;
+            font-size: clamp(28px, 4vw, 42px);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: var(--text-dim);
+            max-width: 55ch;
+            line-height: 1.5;
+        }
+
+        .layout {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.4);
+            padding: 20px;
+        }
+
+        .flush-top {
+            margin-top: 0;
+        }
+
+        .card-rise {
+            animation: fadeInUp 980ms ease;
+        }
+
+        .section-head {
+            margin: 18px 0 8px;
+        }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
+
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-dim);
         }
-        .form-group input, .form-group select {
+
+        .form-group input,
+        .form-group select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-main);
+            font: inherit;
         }
-        button {
+
+        .form-group select {
+            background-color: rgba(16, 30, 56, 0.92);
+            color: #eaf2ff;
+        }
+
+        .form-group select option {
+            background: #eef4ff;
+            color: #0b1220;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: 2px solid rgba(91, 231, 196, 0.32);
+            outline-offset: 1px;
+            border-color: rgba(91, 231, 196, 0.5);
+        }
+
+        .action-btn {
             width: 100%;
-            padding: 10px;
-            background: #007bff;
-            color: white;
+            margin-top: 6px;
+            padding: 12px 14px;
+            background: linear-gradient(130deg, var(--accent) 0%, var(--accent-2) 100%);
+            color: #061328;
             border: none;
-            border-radius: 5px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background 0.3s;
+            font: inherit;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+            box-shadow: 0 10px 24px rgba(75, 161, 255, 0.35);
         }
-        button:hover {
-            background: #0056b3;
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(75, 161, 255, 0.42);
         }
-        button:disabled {
-            background: #cccccc;
+
+        .action-btn:disabled {
+            background: #8aa3c4;
             cursor: not-allowed;
+            box-shadow: none;
         }
+
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(6, 19, 40, 0.2);
             border-radius: 50%;
-            border-top-color: #ffffff;
+            border-top-color: #061328;
             animation: spin 1s ease-in-out infinite;
-            margin-left: 10px;
+            margin-left: 8px;
+            vertical-align: text-bottom;
         }
+
+        .loading-hidden {
+            display: none;
+        }
+
+        #result {
+            margin-top: 14px;
+            min-height: 24px;
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        .stats {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .stat {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .stat b {
+            display: block;
+            font-size: 20px;
+        }
+
+        .stat span {
+            color: var(--text-dim);
+            font-size: 12px;
+        }
+
+        .helper-list {
+            margin: 0;
+            padding-left: 18px;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        .h1{
-            text-align: center;
-            color: rgb(244, 12, 12);
-            box-shadow: #f0f2f4;
-            text-decoration: double;
-            text-shadow: #0e0f0f;
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .page-wrap {
+                width: min(94vw, 720px);
+            }
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            .brand {
+                font-size: 11px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="background-blur"></div>
-    <div class="navbar">
-        <img src="logo.png" alt="Logo">
-        <div class="profile">
-            <button>Login</button>
-            <img src="profile.png" alt="Profile Image">
-        </div>
-    </div>
-    <h1 style="text-align: center; color: rgb(236, 64, 16);">Trobuleshooters Compresser</h1>
-    
-    <div class="container">
-        <form id="uploadForm" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="fileType">Select File Type:</label>
-                <select name="fileType" id="fileType" required>
-                    <option value="image">Image</option>
-                    <option value="video">Video</option>
-                    <option value="document">Document</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="files">Select Files:</label>
-                <input type="file" name="file" id="fileInput" multiple required title="Select files to upload">
-            </div>
-            <button id="downloadButton" type="submit">Download Compressed File <span class="loading" style="display: none;"></span></button>
-        </form>
-        <div id="result"></div>
-    </div>
+    <canvas id="bgCanvas"></canvas>
 
+    <main class="page-wrap">
+        <nav class="navbar">
+            <div class="brand">
+                <img src="logo.png" alt="Troubleshooters logo">
+                <span>Compression Studio</span>
+            </div>
+            <div class="profile">
+                <button class="ghost-btn" type="button">Live Status</button>
+                <img src="profile.png" alt="Profile">
+            </div>
+        </nav>
+
+        <section class="hero">
+            <span class="kicker">Web + Cloud Pipeline</span>
+            <h1 class="title">Compress Faster. Ship Smaller. Move Smoother.</h1>
+            <p class="subtitle">Upload images, videos, or documents and get optimized assets with measurable size reduction.</p>
+        </section>
+
+        <section class="layout">
+            <article class="card">
+                <h2 class="flush-top">Upload Console</h2>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="fileType">Select File Type</label>
+                        <select name="fileType" id="fileType" required>
+                            <option value="image">Image</option>
+                            <option value="video">Video</option>
+                            <option value="document">Document</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileInput">Select Files</label>
+                        <input type="file" name="file" id="fileInput" multiple required title="Select files to upload">
+                    </div>
+                    <button class="action-btn" id="downloadButton" type="submit">Compress And Continue<span class="loading loading-hidden"></span></button>
+                </form>
+                <output id="result" aria-live="polite"></output>
+            </article>
+
+            <aside class="card card-rise">
+                <h2 class="flush-top">Performance Snapshot</h2>
+                <div class="stats">
+                    <div class="stat"><b>Auto</b><span>quality tuning</span></div>
+                    <div class="stat"><b>Multi</b><span>file support</span></div>
+                    <div class="stat"><b>Cloud</b><span>delivery links</span></div>
+                </div>
+                <h3 class="section-head">How it works</h3>
+                <ol class="helper-list">
+                    <li>Pick your file category.</li>
+                    <li>Upload one or more files.</li>
+                    <li>Review compression results and download output.</li>
+                </ol>
+            </aside>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/three@0.162.0/build/three.min.js"></script>
     <script>
+        const initBackground = () => {
+            const canvas = document.getElementById('bgCanvas');
+            if (!globalThis.THREE || !canvas) {
+                return;
+            }
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, globalThis.innerWidth / globalThis.innerHeight, 0.1, 1000);
+            camera.position.z = 16;
+
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio, 2));
+            renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
+
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 1400;
+            const positionArray = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount; i += 1) {
+                const i3 = i * 3;
+                positionArray[i3] = (Math.random() - 0.5) * 60;
+                positionArray[i3 + 1] = (Math.random() - 0.5) * 40;
+                positionArray[i3 + 2] = (Math.random() - 0.5) * 50;
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positionArray, 3));
+
+            const starMaterial = new THREE.PointsMaterial({
+                size: 0.05,
+                color: 0x7fd3ff,
+                transparent: true,
+                opacity: 0.85
+            });
+
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+
+            const glowGeometry = new THREE.TorusKnotGeometry(3.8, 0.25, 160, 24);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x5be7c4,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.14
+            });
+            const glowRing = new THREE.Mesh(glowGeometry, glowMaterial);
+            glowRing.position.z = -8;
+            scene.add(glowRing);
+
+            const mouse = { x: 0, y: 0 };
+            globalThis.addEventListener('mousemove', (event) => {
+                mouse.x = (event.clientX / globalThis.innerWidth) * 2 - 1;
+                mouse.y = (event.clientY / globalThis.innerHeight) * 2 - 1;
+            });
+
+            const animate = () => {
+                stars.rotation.y += 0.0009;
+                stars.rotation.x += 0.0003;
+                glowRing.rotation.x += 0.002;
+                glowRing.rotation.y += 0.0016;
+
+                camera.position.x += (mouse.x * 0.8 - camera.position.x) * 0.02;
+                camera.position.y += (-mouse.y * 0.5 - camera.position.y) * 0.02;
+                camera.lookAt(scene.position);
+
+                renderer.render(scene, camera);
+                globalThis.requestAnimationFrame(animate);
+            };
+
+            animate();
+
+            globalThis.addEventListener('resize', () => {
+                camera.aspect = globalThis.innerWidth / globalThis.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
+            });
+        };
+
+        initBackground();
+
+        const fileTypeSelect = document.getElementById('fileType');
+        const fileInput = document.getElementById('fileInput');
+
+        const updateAcceptedFileTypes = () => {
+            const selectedType = fileTypeSelect.value;
+            if (selectedType === 'image') {
+                fileInput.accept = 'image/*';
+            } else if (selectedType === 'video') {
+                fileInput.accept = 'video/*';
+            } else {
+                fileInput.accept = '.pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx,.zip,.rar';
+            }
+        };
+
+        fileTypeSelect.addEventListener('change', updateAcceptedFileTypes);
+        updateAcceptedFileTypes();
+
         document.getElementById('uploadForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
-            const fileInput = document.getElementById('fileInput');
             const fileType = document.getElementById('fileType').value;
             const uploadButton = document.getElementById('downloadButton');
             const loadingSpinner = document.querySelector('.loading');
+            const resultNode = document.getElementById('result');
 
             if (!uploadButton || !loadingSpinner) {
                 return;
             }
 
+            if (!fileInput.files || fileInput.files.length === 0) {
+                resultNode.textContent = 'Please choose at least one file.';
+                return;
+            }
+
             uploadButton.disabled = true;
             loadingSpinner.style.display = 'inline-block';
+            resultNode.textContent = '';
 
             try {
-                const formData = new FormData();
+                const buildFormData = () => {
+                    const formData = new FormData();
+                    for (const file of fileInput.files) {
+                        formData.append('file', file);
+                    }
+                    formData.append('fileType', fileType);
+                    return formData;
+                };
 
-                for (let i = 0; i < fileInput.files.length; i++) {
-                    formData.append('file', fileInput.files[i]);
+                const endpoints = globalThis.location.protocol === 'http:' || globalThis.location.protocol === 'https:'
+                    ? ['/upload', 'http://localhost:3000/upload', 'http://127.0.0.1:3000/upload']
+                    : ['http://localhost:3000/upload', 'http://127.0.0.1:3000/upload'];
+
+                let response;
+                let lastNetworkError;
+
+                for (const endpoint of endpoints) {
+                    try {
+                        response = await fetch(endpoint, {
+                            method: 'POST',
+                            body: buildFormData()
+                        });
+                        break;
+                    } catch (networkError) {
+                        lastNetworkError = networkError;
+                    }
                 }
 
-                formData.append('fileType', fileType);
-
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                if (!response) {
+                    const networkMessage = lastNetworkError instanceof Error ? lastNetworkError.message : 'Unable to connect to upload service.';
+                    throw new Error(`Cannot connect to backend upload service. Start the server with "npm start" and open http://localhost:3000. (${networkMessage})`);
+                }
 
                 if (!response.ok) {
                     const errorBody = await response.json().catch(() => ({}));
@@ -171,11 +546,16 @@
                 }
 
                 const result = await response.json();
-                const params = new URLSearchParams(result[0]).toString();
-                window.location.href = `/result.html?${params}`;
+
+                if (!Array.isArray(result) || result.length === 0) {
+                    throw new Error('Upload completed but no result was returned.');
+                }
+
+                sessionStorage.setItem('compressionResults', JSON.stringify(result));
+                globalThis.location.href = '/result.html';
             } catch (error) {
                 console.error('Error during file upload:', error);
-                document.getElementById('result').innerHTML = `<p>Error: ${error.message}</p>`;
+                resultNode.textContent = `Error: ${error.message}`;
             } finally {
                 uploadButton.disabled = false;
                 loadingSpinner.style.display = 'none';

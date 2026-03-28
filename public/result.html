@@ -5,147 +5,444 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compression Result</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: url('download.jpeg') no-repeat center center fixed;
-            background-size: cover;
-            margin: 0;
-            padding: 0;
+        :root {
+            --bg-main: #09111f;
+            --bg-card: rgba(6, 14, 30, 0.75);
+            --line: rgba(130, 180, 255, 0.24);
+            --text-main: #ebf1ff;
+            --text-dim: #9cb2d9;
+            --accent: #5be7c4;
+            --accent-2: #56a3ff;
         }
-        .background-blur {
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: radial-gradient(circle at 20% 0%, #162748 0%, #0b1220 55%, #05070d 100%);
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        #bgCanvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: inherit;
-            filter: blur(2px);
-            z-index: -1;
+            z-index: 0;
         }
-        .container {
+
+        .page-wrap {
             position: relative;
-            filter: none;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
+            z-index: 1;
+            width: min(980px, 92vw);
+            margin: 28px auto;
         }
+
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
+            gap: 16px;
+            padding: 14px 18px;
+            background: rgba(8, 16, 32, 0.72);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+            animation: fadeInDown 700ms ease;
         }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
         .navbar img {
             height: 40px;
         }
+
         .navbar .profile {
             display: flex;
             align-items: center;
+            gap: 10px;
         }
+
         .navbar .profile img {
-            height: 40px;
+            height: 36px;
+            width: 36px;
             border-radius: 50%;
-            margin-left: 10px;
+            border: 2px solid var(--line);
         }
+
+        .ghost-btn {
+            border: 1px solid var(--line);
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 999px;
+            padding: 8px 14px;
+            font: inherit;
+        }
+
+        .headline {
+            margin: 28px 0 16px;
+            font-size: clamp(28px, 4vw, 42px);
+            letter-spacing: -0.03em;
+            line-height: 1.06;
+            animation: fadeInUp 840ms ease;
+        }
+
+        .container {
+            background: var(--bg-card);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            animation: fadeInUp 960ms ease;
+        }
+
         .result-info {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
+
         .result-info p {
-            font-size: 18px;
-            margin: 10px 0;
+            margin: 8px 0;
+            color: var(--text-dim);
         }
+
+        .result-card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: cardReveal 500ms ease forwards;
+        }
+
+        .result-card h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .result-actions {
+            margin-top: 10px;
+        }
+
+        .result-actions a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(91, 231, 196, 0.4);
+        }
+
+        .result-actions a:hover {
+            color: #a3ffe6;
+        }
+
         .highlight {
             font-weight: bold;
-            color: #007bff;
+            color: var(--accent-2);
         }
+
         button {
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
+            padding: 12px 16px;
+            background: linear-gradient(130deg, var(--accent) 0%, var(--accent-2) 100%);
+            color: #061328;
             border: none;
-            border-radius: 5px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background 0.3s;
+            font: inherit;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+            box-shadow: 0 10px 24px rgba(75, 161, 255, 0.35);
         }
+
         button:hover {
-            background: #0056b3;
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(75, 161, 255, 0.42);
         }
+
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(6, 19, 40, 0.2);
             border-radius: 50%;
-            border-top-color: #ffffff;
+            border-top-color: #061328;
             animation: spin 1s ease-in-out infinite;
-            margin-left: 10px;
+            margin-left: 8px;
+            vertical-align: text-bottom;
         }
+
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        .loading-hidden {
+            display: none;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .secondary {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--line);
+            box-shadow: none;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes cardReveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .result-info {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .page-wrap {
+                width: min(94vw, 720px);
+            }
+            .brand {
+                font-size: 11px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <img src="logo.png" alt="Logo">
-        <div class="profile">
-            <button>Login</button>
-            <img src="profile.png" alt="Profile Image">
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="result-info" id="result"></div>
-        <button id="downloadButton">Download Compressed File <span class="loading" style="display: none;"></span></button>
-    </div>
+    <canvas id="bgCanvas"></canvas>
 
+    <main class="page-wrap">
+        <nav class="navbar">
+            <div class="brand">
+                <img src="logo.png" alt="Troubleshooters logo">
+                <span>Compression Studio</span>
+            </div>
+            <div class="profile">
+                <button class="ghost-btn" type="button">Completed</button>
+                <img src="profile.png" alt="Profile">
+            </div>
+        </nav>
+
+        <h1 class="headline">Compression Results Are Ready</h1>
+
+        <section class="container">
+            <div class="result-info" id="result"></div>
+            <div class="actions">
+                <button id="downloadButton">Download All Files<span class="loading loading-hidden"></span></button>
+                <button class="secondary" id="backButton" type="button">Back To Upload</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/three@0.162.0/build/three.min.js"></script>
     <script>
+        const initBackground = () => {
+            const canvas = document.getElementById('bgCanvas');
+            if (!globalThis.THREE || !canvas) {
+                return;
+            }
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, globalThis.innerWidth / globalThis.innerHeight, 0.1, 1000);
+            camera.position.z = 16;
+
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio, 2));
+            renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
+
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 1300;
+            const positionArray = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount; i += 1) {
+                const i3 = i * 3;
+                positionArray[i3] = (Math.random() - 0.5) * 60;
+                positionArray[i3 + 1] = (Math.random() - 0.5) * 40;
+                positionArray[i3 + 2] = (Math.random() - 0.5) * 50;
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positionArray, 3));
+
+            const starMaterial = new THREE.PointsMaterial({
+                size: 0.05,
+                color: 0x7fd3ff,
+                transparent: true,
+                opacity: 0.85
+            });
+
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+
+            const arcGeometry = new THREE.TorusGeometry(4.2, 0.09, 20, 120);
+            const arcMaterial = new THREE.MeshBasicMaterial({
+                color: 0x56a3ff,
+                transparent: true,
+                opacity: 0.22,
+                wireframe: true
+            });
+            const arc = new THREE.Mesh(arcGeometry, arcMaterial);
+            arc.position.z = -6;
+            scene.add(arc);
+
+            const animate = () => {
+                stars.rotation.y += 0.00085;
+                stars.rotation.x += 0.00025;
+                arc.rotation.x += 0.0018;
+                arc.rotation.y += 0.0012;
+
+                renderer.render(scene, camera);
+                globalThis.requestAnimationFrame(animate);
+            };
+
+            animate();
+
+            globalThis.addEventListener('resize', () => {
+                camera.aspect = globalThis.innerWidth / globalThis.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
+            });
+        };
+
+        initBackground();
+
         document.addEventListener('DOMContentLoaded', function() {
-            const params = new URLSearchParams(window.location.search);
-            const originalFileSize = params.get('originalFileSize');
-            const compressedFileSize = params.get('compressedFileSize');
-            const compressionPercentage = params.get('compressionPercentage');
-            const downloadUrl = params.get('downloadUrl');
-
-            document.getElementById('result').innerHTML = `
-                <p>Original Size: <span class="highlight">${originalFileSize} MB</span></p>
-                <p>Compressed Size: <span class="highlight">${compressedFileSize} MB</span></p>
-                <p>Compression Ratio: <span class="highlight">${compressionPercentage}%</span></p>
-            `;
-
+            const resultNode = document.getElementById('result');
             const downloadButton = document.getElementById('downloadButton');
+            const backButton = document.getElementById('backButton');
             const loadingSpinner = document.querySelector('.loading');
+            let results = [];
+
+            try {
+                const savedResults = sessionStorage.getItem('compressionResults');
+                if (savedResults) {
+                    results = JSON.parse(savedResults);
+                }
+            } catch (error) {
+                console.error('Failed to read saved results:', error);
+            }
+
+            if (!Array.isArray(results) || results.length === 0) {
+                const params = new URLSearchParams(globalThis.location.search);
+                const fallbackResult = {
+                    fileName: params.get('fileName') || 'Compressed file',
+                    originalFileSize: params.get('originalFileSize'),
+                    compressedFileSize: params.get('compressedFileSize'),
+                    compressionPercentage: params.get('compressionPercentage'),
+                    previewUrl: params.get('previewUrl'),
+                    downloadUrl: params.get('downloadUrl')
+                };
+
+                if (fallbackResult.downloadUrl) {
+                    results = [fallbackResult];
+                }
+            }
+
+            if (!Array.isArray(results) || results.length === 0) {
+                resultNode.innerHTML = '<p>No compression result found. Please upload files again.</p>';
+                downloadButton.style.display = 'none';
+                loadingSpinner.style.display = 'none';
+                return;
+            }
+
+            resultNode.innerHTML = results.map((item, index) => {
+                const delay = index * 90;
+                return `
+                    <article class="result-card" style="animation-delay:${delay}ms;">
+                        <h3>${item.fileName || `File ${index + 1}`}</h3>
+                        <p>Original Size: <span class="highlight">${item.originalFileSize} MB</span></p>
+                        <p>Compressed Size: <span class="highlight">${item.compressedFileSize} MB</span></p>
+                        <p>Compression Ratio: <span class="highlight">${item.compressionPercentage}%</span></p>
+                        <div class="result-actions">
+                            <a href="${item.downloadUrl}" rel="noopener noreferrer">Download compressed file</a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            const triggerDownload = (url, filename) => {
+                const anchor = document.createElement('a');
+                anchor.href = url;
+                anchor.download = filename || '';
+                anchor.rel = 'noopener noreferrer';
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+            };
 
             downloadButton.addEventListener('click', function(event) {
                 event.preventDefault();
                 downloadButton.disabled = true;
                 loadingSpinner.style.display = 'inline-block';
 
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', downloadUrl, true);
-                xhr.responseType = 'blob';
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        const url = window.URL.createObjectURL(xhr.response);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1); // Keep the same name and format
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(url);
+                results.forEach((item) => {
+                    if (item.downloadUrl) {
+                        triggerDownload(item.downloadUrl, item.fileName);
                     }
+                });
+
+                setTimeout(() => {
                     downloadButton.disabled = false;
                     loadingSpinner.style.display = 'none';
-                };
-                xhr.send();
+                }, 850);
+            });
+
+            backButton.addEventListener('click', () => {
+                globalThis.location.href = '/';
             });
         });
     </script>
